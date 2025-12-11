@@ -404,6 +404,10 @@
                 <div class="stat-label">Clicks</div>
                 <div class="stat-value" id="clicks">0</div>
             </div>
+            <div class="stat-box">
+                <div class="stat-label">Tiempo medio</div>
+                <div class="stat-value" id="avgTime">-</div>
+            </div>
         </div>
 
         <div class="beer-container" id="beerContainer">
@@ -443,6 +447,7 @@
         let startTime = 0;
         let timerInterval = null;
         const fillPerClick = 2; // 2% por click (50 clicks para llenar)
+        let clickTimestamps = []; // Para calcular tiempo promedio entre clicks
 
         // Elementos del DOM
         const beerContainer = document.getElementById('beerContainer');
@@ -451,6 +456,7 @@
         const foam = document.getElementById('foam');
         const timerDisplay = document.getElementById('timer');
         const clicksDisplay = document.getElementById('clicks');
+        const avgTimeDisplay = document.getElementById('avgTime');
         const victoryMessage = document.getElementById('victoryMessage');
         const finalTimeDisplay = document.getElementById('finalTime');
 
@@ -580,6 +586,21 @@
             }
         }
 
+        // Calcular tiempo promedio entre clicks
+        function updateAvgTime() {
+            if (clickTimestamps.length < 2) {
+                avgTimeDisplay.textContent = '-';
+                return;
+            }
+
+            let totalDiff = 0;
+            for (let i = 1; i < clickTimestamps.length; i++) {
+                totalDiff += clickTimestamps[i] - clickTimestamps[i - 1];
+            }
+            const avgDiff = totalDiff / (clickTimestamps.length - 1);
+            avgTimeDisplay.textContent = (avgDiff / 1000).toFixed(2) + 's';
+        }
+
         // Manejar click en la jarra
         beerContainer.addEventListener('click', (e) => {
             if (gameEnded) return;
@@ -587,6 +608,10 @@
             startTimer();
             clickCount++;
             clicksDisplay.textContent = clickCount;
+
+            // Guardar timestamp del click
+            clickTimestamps.push(Date.now());
+            updateAvgTime();
 
             // Incrementar porcentaje
             fillPercentage = Math.min(100, fillPercentage + fillPerClick);
@@ -678,11 +703,13 @@
             gameStarted = false;
             gameEnded = false;
             startTime = 0;
+            clickTimestamps = [];
 
             beerLiquid.style.height = '0%';
             percentage.textContent = '0%';
             timerDisplay.textContent = '0.0s';
             clicksDisplay.textContent = '0';
+            avgTimeDisplay.textContent = '-';
             foam.classList.remove('visible');
             victoryMessage.classList.remove('show');
 
