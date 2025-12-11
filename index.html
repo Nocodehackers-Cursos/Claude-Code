@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Llena tu Turia - Beer Clicker Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Efecto de pared de bar */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                repeating-linear-gradient(90deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0,0,0,0.1) 2px,
+                    rgba(0,0,0,0.1) 4px);
+            pointer-events: none;
+        }
+
+        .game-container {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(232, 119, 34, 0.5);
+            color: #E87722;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            color: #ccc;
+            margin-bottom: 30px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 2px solid rgba(232, 119, 34, 0.3);
+            min-width: 150px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #999;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #E87722;
+        }
+
+        /* Contenedor de la jarra */
+        .beer-container {
+            position: relative;
+            margin: 30px auto;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.1s;
+        }
+
+        .beer-container:hover {
+            transform: scale(1.02);
+        }
+
+        .beer-container:active {
+            transform: scale(0.98);
+        }
+
+        /* Jarra con efecto de cristal */
+        .beer-glass {
+            position: relative;
+            width: 200px;
+            height: 350px;
+            margin: 0 auto;
+            background: linear-gradient(135deg,
+                rgba(255, 255, 255, 0.1) 0%,
+                rgba(255, 255, 255, 0.05) 50%,
+                rgba(255, 255, 255, 0.15) 100%);
+            border-radius: 0 0 20px 20px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: none;
+            box-shadow:
+                inset 0 0 30px rgba(255, 255, 255, 0.1),
+                0 10px 30px rgba(0, 0, 0, 0.5),
+                inset -10px 0 20px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            backdrop-filter: blur(5px);
+        }
+
+        /* Brillo de cristal */
+        .glass-shine {
+            position: absolute;
+            top: 0;
+            left: 10%;
+            width: 30%;
+            height: 100%;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.3) 50%,
+                transparent 100%);
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        /* Líquido (cerveza) */
+        .beer-liquid {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 0%;
+            background: linear-gradient(180deg,
+                #E87722 0%,
+                #D16A1A 50%,
+                #B85A12 100%);
+            transition: height 0.3s ease-out;
+            box-shadow:
+                inset 0 0 20px rgba(0, 0, 0, 0.3),
+                0 -5px 15px rgba(232, 119, 34, 0.4);
+        }
+
+        /* Burbujas dentro del líquido */
+        .bubble {
+            position: absolute;
+            bottom: 0;
+            background: radial-gradient(circle,
+                rgba(255, 255, 255, 0.6) 0%,
+                rgba(255, 255, 255, 0.2) 70%,
+                transparent 100%);
+            border-radius: 50%;
+            animation: rise linear;
+            pointer-events: none;
+        }
+
+        @keyframes rise {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-350px) scale(0.5);
+                opacity: 0;
+            }
+        }
+
+        /* Espuma */
+        .foam {
+            position: absolute;
+            top: -40px;
+            left: -10px;
+            right: -10px;
+            height: 60px;
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+        }
+
+        .foam.visible {
+            opacity: 1;
+        }
+
+        .foam-bubble {
+            position: absolute;
+            background: radial-gradient(circle at 30% 30%,
+                #ffffff 0%,
+                #f5f5f5 50%,
+                #e0e0e0 100%);
+            border-radius: 50%;
+            box-shadow:
+                inset -2px -2px 5px rgba(0, 0, 0, 0.1),
+                0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Efecto splash al hacer click */
+        .splash {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #E87722;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: splashAnim 0.5s ease-out forwards;
+        }
+
+        @keyframes splashAnim {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0);
+                opacity: 0;
+            }
+        }
+
+        /* Porcentaje */
+        .percentage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3em;
+            font-weight: bold;
+            color: white;
+            text-shadow:
+                0 0 10px rgba(0, 0, 0, 0.8),
+                0 0 20px rgba(232, 119, 34, 0.5);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* Mensaje de victoria */
+        .victory-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px 60px;
+            border-radius: 20px;
+            border: 3px solid #E87722;
+            box-shadow: 0 0 50px rgba(232, 119, 34, 0.5);
+            z-index: 100;
+            transition: transform 0.3s;
+            text-align: center;
+        }
+
+        .victory-message.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .victory-message h2 {
+            font-size: 3em;
+            color: #E87722;
+            margin-bottom: 20px;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .victory-message p {
+            font-size: 1.5em;
+            margin-bottom: 30px;
+        }
+
+        /* Botones */
+        .btn {
+            background: linear-gradient(135deg, #E87722 0%, #D16A1A 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(232, 119, 34, 0.3);
+            transition: all 0.3s;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(232, 119, 34, 0.5);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Ranking */
+        .ranking {
+            margin-top: 30px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid rgba(232, 119, 34, 0.3);
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .ranking h3 {
+            color: #E87722;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .ranking-list {
+            list-style: none;
+        }
+
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+        }
+
+        .ranking-item.highlight {
+            background: rgba(232, 119, 34, 0.2);
+            border: 1px solid #E87722;
+        }
+
+        .rank {
+            font-weight: bold;
+            color: #E87722;
+            margin-right: 10px;
+        }
+
+        /* Logo/texto Turia */
+        .turia-logo {
+            font-size: 1.5em;
+            color: #E87722;
+            font-weight: bold;
+            letter-spacing: 3px;
+            margin-top: 20px;
+            text-shadow: 0 0 10px rgba(232, 119, 34, 0.5);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            .stats {
+                gap: 20px;
+            }
+
+            .stat-box {
+                min-width: 120px;
+                padding: 10px 15px;
+            }
+
+            .beer-glass {
+                width: 150px;
+                height: 280px;
+            }
+
+            .percentage {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🍺 LLENA TU TURIA 🍺</h1>
+        <p class="subtitle">¡Haz click en la jarra para llenarla!</p>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-label">Tiempo</div>
+                <div class="stat-value" id="timer">0.0s</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Clicks</div>
+                <div class="stat-value" id="clicks">0</div>
+            </div>
+        </div>
+
+        <div class="beer-container" id="beerContainer">
+            <div class="beer-glass">
+                <div class="glass-shine"></div>
+                <div class="beer-liquid" id="beerLiquid"></div>
+                <div class="percentage" id="percentage">0%</div>
+                <div class="foam" id="foam">
+                    <!-- Burbujas de espuma generadas dinámicamente -->
+                </div>
+            </div>
+        </div>
+
+        <div class="turia-logo">TURIA</div>
+
+        <div class="ranking" id="ranking">
+            <h3>🏆 Mejores Tiempos</h3>
+            <ul class="ranking-list" id="rankingList">
+                <li class="ranking-item">No hay tiempos registrados</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="victory-message" id="victoryMessage">
+        <h2>¡SALUD! 🍻</h2>
+        <p>¡Has llenado tu Turia!</p>
+        <p id="finalTime"></p>
+        <button class="btn" onclick="resetGame()">🔄 Otra Ronda</button>
+    </div>
+
+    <script>
+        // Variables del juego
+        let fillPercentage = 0;
+        let clickCount = 0;
+        let gameStarted = false;
+        let gameEnded = false;
+        let startTime = 0;
+        let timerInterval = null;
+        const fillPerClick = 2; // 2% por click (50 clicks para llenar)
+
+        // Elementos del DOM
+        const beerContainer = document.getElementById('beerContainer');
+        const beerLiquid = document.getElementById('beerLiquid');
+        const percentage = document.getElementById('percentage');
+        const foam = document.getElementById('foam');
+        const timerDisplay = document.getElementById('timer');
+        const clicksDisplay = document.getElementById('clicks');
+        const victoryMessage = document.getElementById('victoryMessage');
+        const finalTimeDisplay = document.getElementById('finalTime');
+
+        // Generar burbujas de espuma
+        function generateFoamBubbles() {
+            foam.innerHTML = '';
+            const bubbleSizes = [
+                { size: 40, left: 10, top: 20 },
+                { size: 35, left: 45, top: 10 },
+                { size: 38, left: 75, top: 25 },
+                { size: 32, left: 25, top: 5 },
+                { size: 36, left: 60, top: 30 },
+                { size: 30, left: 85, top: 15 },
+                { size: 34, left: 5, top: 35 },
+                { size: 33, left: 50, top: 40 },
+                { size: 31, left: 90, top: 35 }
+            ];
+
+            bubbleSizes.forEach(bubble => {
+                const foamBubble = document.createElement('div');
+                foamBubble.className = 'foam-bubble';
+                foamBubble.style.width = `${bubble.size}px`;
+                foamBubble.style.height = `${bubble.size}px`;
+                foamBubble.style.left = `${bubble.left}%`;
+                foamBubble.style.top = `${bubble.top}px`;
+                foam.appendChild(foamBubble);
+            });
+        }
+
+        generateFoamBubbles();
+
+        // Iniciar temporizador
+        function startTimer() {
+            if (!gameStarted) {
+                gameStarted = true;
+                startTime = Date.now();
+                timerInterval = setInterval(updateTimer, 100);
+            }
+        }
+
+        // Actualizar temporizador
+        function updateTimer() {
+            const elapsed = (Date.now() - startTime) / 1000;
+            timerDisplay.textContent = elapsed.toFixed(1) + 's';
+        }
+
+        // Generar sonido de cerveza
+        function playPourSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 200 + Math.random() * 100;
+            oscillator.type = 'sine';
+
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        // Generar sonido de victoria
+        function playVictorySound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+
+            notes.forEach((freq, index) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = freq;
+                oscillator.type = 'sine';
+
+                const startTime = audioContext.currentTime + index * 0.15;
+                gainNode.gain.setValueAtTime(0.2, startTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+
+                oscillator.start(startTime);
+                oscillator.stop(startTime + 0.3);
+            });
+        }
+
+        // Crear burbujas animadas
+        function createBubbles() {
+            if (fillPercentage > 0 && fillPercentage < 100) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+
+                const size = 3 + Math.random() * 8;
+                bubble.style.width = `${size}px`;
+                bubble.style.height = `${size}px`;
+                bubble.style.left = `${20 + Math.random() * 60}%`;
+                bubble.style.animationDuration = `${2 + Math.random() * 2}s`;
+
+                beerLiquid.appendChild(bubble);
+
+                setTimeout(() => bubble.remove(), 4000);
+            }
+        }
+
+        // Crear efecto splash
+        function createSplash(x, y) {
+            for (let i = 0; i < 8; i++) {
+                const splash = document.createElement('div');
+                splash.className = 'splash';
+
+                const angle = (Math.PI * 2 * i) / 8;
+                const distance = 30 + Math.random() * 20;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+
+                splash.style.left = x + 'px';
+                splash.style.top = y + 'px';
+                splash.style.setProperty('--tx', tx + 'px');
+                splash.style.setProperty('--ty', ty + 'px');
+
+                beerContainer.appendChild(splash);
+
+                setTimeout(() => splash.remove(), 500);
+            }
+        }
+
+        // Manejar click en la jarra
+        beerContainer.addEventListener('click', (e) => {
+            if (gameEnded) return;
+
+            startTimer();
+            clickCount++;
+            clicksDisplay.textContent = clickCount;
+
+            // Incrementar porcentaje
+            fillPercentage = Math.min(100, fillPercentage + fillPerClick);
+            beerLiquid.style.height = fillPercentage + '%';
+            percentage.textContent = Math.floor(fillPercentage) + '%';
+
+            // Efectos
+            playPourSound();
+            createBubbles();
+
+            // Efecto splash en la posición del click
+            const rect = beerContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            createSplash(x, y);
+
+            // Victoria al llegar al 100%
+            if (fillPercentage >= 100 && !gameEnded) {
+                gameEnded = true;
+                clearInterval(timerInterval);
+
+                // Mostrar espuma
+                foam.classList.add('visible');
+
+                // Mostrar mensaje de victoria
+                setTimeout(() => {
+                    playVictorySound();
+                    const finalTime = ((Date.now() - startTime) / 1000).toFixed(2);
+                    finalTimeDisplay.textContent = `Tiempo: ${finalTime}s con ${clickCount} clicks`;
+                    victoryMessage.classList.add('show');
+
+                    // Guardar en ranking
+                    saveScore(finalTime, clickCount);
+                    displayRanking();
+                }, 500);
+            }
+        });
+
+        // Generar burbujas periódicamente
+        setInterval(createBubbles, 500);
+
+        // Sistema de ranking
+        function saveScore(time, clicks) {
+            let ranking = JSON.parse(localStorage.getItem('turiaRanking') || '[]');
+
+            ranking.push({
+                time: parseFloat(time),
+                clicks: clicks,
+                date: new Date().toLocaleDateString()
+            });
+
+            // Ordenar por tiempo (menor es mejor)
+            ranking.sort((a, b) => a.time - b.time);
+
+            // Mantener solo los 5 mejores
+            ranking = ranking.slice(0, 5);
+
+            localStorage.setItem('turiaRanking', JSON.stringify(ranking));
+        }
+
+        function displayRanking() {
+            const ranking = JSON.parse(localStorage.getItem('turiaRanking') || '[]');
+            const rankingList = document.getElementById('rankingList');
+
+            if (ranking.length === 0) {
+                rankingList.innerHTML = '<li class="ranking-item">No hay tiempos registrados</li>';
+                return;
+            }
+
+            rankingList.innerHTML = '';
+            ranking.forEach((score, index) => {
+                const li = document.createElement('li');
+                li.className = 'ranking-item';
+
+                const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+                li.innerHTML = `
+                    <span><span class="rank">${medals[index]}</span> ${score.time}s</span>
+                    <span>${score.clicks} clicks</span>
+                `;
+
+                rankingList.appendChild(li);
+            });
+        }
+
+        // Reiniciar juego
+        function resetGame() {
+            fillPercentage = 0;
+            clickCount = 0;
+            gameStarted = false;
+            gameEnded = false;
+            startTime = 0;
+
+            beerLiquid.style.height = '0%';
+            percentage.textContent = '0%';
+            timerDisplay.textContent = '0.0s';
+            clicksDisplay.textContent = '0';
+            foam.classList.remove('visible');
+            victoryMessage.classList.remove('show');
+
+            clearInterval(timerInterval);
+
+            // Limpiar burbujas
+            const bubbles = document.querySelectorAll('.bubble');
+            bubbles.forEach(b => b.remove());
+        }
+
+        // Mostrar ranking al cargar
+        displayRanking();
+    </script>
+</body>
+</html>
